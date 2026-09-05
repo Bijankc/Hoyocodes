@@ -21,6 +21,8 @@ The app dynamically fetches codes for the following titles using the [Ennead API
 - ☄️ **Honkai Impact 3rd**
 - ⚖️ **Tears of Themis**
 
+<img width="1129" height="787" alt="Screenshot_2026-09-05-23-40-19-646_com android chrome" src="https://github.com/user-attachments/assets/7d8d24dc-0def-4fe4-bf0b-e995416c027f" />
+
 ---
 
 ## ✨ Key Features
