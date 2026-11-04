@@ -19,12 +19,14 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      STATE_FILE: ${{ runner.temp }}/seen-codes.json
       # Comma-separated: genshin, starrail, zenless, honkai, themis
       WATCH_GAMES: genshin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set state file path
+        run: echo "STATE_FILE=$RUNNER_TEMP/seen-codes.json" >> "$GITHUB_ENV"
 
       - name: Load seen codes
         run: |
