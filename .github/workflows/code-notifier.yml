@@ -1,0 +1,59 @@
+# Checks for new redemption codes every hour and sends them to your phone/PC via ntfy
+name: New code notifier
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Needed to save the list of already-notified codes to the notifier-state branch
+permissions:
+  contents: write
+
+concurrency:
+  group: "code-notifier"
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      STATE_FILE: ${{ runner.temp }}/seen-codes.json
+      # Comma-separated: genshin, starrail, zenless, honkai, themis
+      WATCH_GAMES: genshin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load seen codes
+        run: |
+          if git fetch --depth=1 origin notifier-state 2>/dev/null; then
+            git show FETCH_HEAD:seen-codes.json > "$STATE_FILE"
+          else
+            echo "No saved state yet, this run will seed it"
+          fi
+
+      - name: Check for new codes
+        id: check
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "::error::Add your ntfy topic as a repository secret named NTFY_TOPIC"
+            exit 1
+          fi
+          python3 .github/scripts/notify_codes.py
+
+      - name: Save seen codes
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir "$RUNNER_TEMP/state" && cd "$RUNNER_TEMP/state"
+          git init -q
+          cp "$STATE_FILE" seen-codes.json
+          git add seen-codes.json
+          git -c user.name="github-actions[bot]" -c user.email="41898732+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Update seen codes"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:notifier-state
